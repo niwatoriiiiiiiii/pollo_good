@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Configuration
   const CHICKEN_IMAGE_PATH = "assets/chicken_512x512.png";
   const CHICKEN_SIZE = Math.min(
-    Math.max(Math.min(window.innerWidth, window.innerHeight) * 0.35, 100),
+    Math.max(Math.min(window.innerWidth, window.innerHeight) * 0.25, 130),
     250,
   );
   const BOUNCINESS = 0.7;
@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const engine = Engine.create();
   const world = engine.world;
-  engine.gravity.y = 1.2;
+  engine.gravity.y = 0.8;
 
   const container = document.getElementById("canvas-container");
   if (!container) return;
@@ -137,6 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let velScaleY = 0;
 
   Events.on(engine, "afterUpdate", () => {
+    // デルタタイム（フレーム間の経過時間）を取得し、60FPS基準の比率を計算
+    const deltaRatio = (engine.timing.lastDelta || (1000 / 60)) / (1000 / 60);
+
     // 速度制限
     const maxSpeed = 30;
     if (chicken.speed > maxSpeed) {
@@ -147,12 +150,17 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    const forceX = (baseScale - currentScaleX) * springStrength;
-    const forceY = (baseScale - currentScaleY) * springStrength;
-    velScaleX = (velScaleX + forceX) * damping;
-    velScaleY = (velScaleY + forceY) * damping;
-    currentScaleX += velScaleX;
-    currentScaleY += velScaleY;
+    // ぽよぽよ計算にデルタタイムを適用（リフレッシュレートの違いによる挙動変化を防ぐ）
+    const forceX = (baseScale - currentScaleX) * springStrength * deltaRatio;
+    const forceY = (baseScale - currentScaleY) * springStrength * deltaRatio;
+    
+    // 減衰もデルタタイムの影響を受けるため補正
+    const currentDamping = Math.pow(damping, deltaRatio);
+    velScaleX = (velScaleX + forceX) * currentDamping;
+    velScaleY = (velScaleY + forceY) * currentDamping;
+    
+    currentScaleX += velScaleX * deltaRatio;
+    currentScaleY += velScaleY * deltaRatio;
 
     let dX = currentScaleX;
     let dY = currentScaleY;
@@ -187,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const normal = pair.collision.normal;
         if (!normal) return;
 
-        const intensity = Math.min(chicken.speed * 0.005, 0.04);
+        const intensity = Math.min(chicken.speed * 0.005, 0.035);
         if (Math.abs(normal.y) > Math.abs(normal.x)) {
           velScaleX += intensity;
           velScaleY -= intensity;
@@ -274,6 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 150); // 150ms 待ってから1回だけ再計算
   });
 
+  // 物理演算のランナー
   const runner = Runner.create();
   Runner.run(runner, engine);
   Render.run(render);
