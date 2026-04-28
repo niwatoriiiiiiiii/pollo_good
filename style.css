@@ -1,0 +1,81 @@
+:root {
+    --bg-color: #e0e0e0;
+    --text-color: #333333;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-color);
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-color);
+}
+
+#canvas-container {
+    width: 100%;
+    height: 100%;
+}
+
+canvas {
+    display: block;
+}
+
+header, footer {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    text-align: center;
+    z-index: 10;
+    user-select: none; /* 文字を選択できないようにする */
+    -webkit-user-select: none; /* Safari用 */
+}
+
+header h1 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text-color);
+    margin: 0;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    text-align: center;
+    z-index: 10;
+    user-select: none; /* 文字を選択できないようにする */
+    -webkit-user-select: none; /* Safari用 */
+}
+
+footer p {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-color);
+    opacity: 0.6;
+    margin: 0;
+}
