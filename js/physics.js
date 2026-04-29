@@ -23,11 +23,11 @@ document.addEventListener("DOMContentLoaded", () => {
     250,
   );
   const BOUNCINESS = 0.7;
-  const FRICTION = 0.005;
+  const FRICTION = 0.01;
 
   const engine = Engine.create();
   const world = engine.world;
-  engine.gravity.y = 0.8;
+  engine.gravity.y = 2.0;
 
   const container = document.getElementById("canvas-container");
   if (!container) return;
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   Events.on(engine, "afterUpdate", () => {
     // デルタタイム（フレーム間の経過時間）を取得し、60FPS基準の比率を計算
-    const deltaRatio = (engine.timing.lastDelta || (1000 / 60)) / (1000 / 60);
+    const deltaRatio = (engine.timing.lastDelta || 1000 / 60) / (1000 / 60);
 
     // 速度制限
     const maxSpeed = 30;
@@ -153,12 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // ぽよぽよ計算にデルタタイムを適用（リフレッシュレートの違いによる挙動変化を防ぐ）
     const forceX = (baseScale - currentScaleX) * springStrength * deltaRatio;
     const forceY = (baseScale - currentScaleY) * springStrength * deltaRatio;
-    
+
     // 減衰もデルタタイムの影響を受けるため補正
     const currentDamping = Math.pow(damping, deltaRatio);
     velScaleX = (velScaleX + forceX) * currentDamping;
     velScaleY = (velScaleY + forceY) * currentDamping;
-    
+
     currentScaleX += velScaleX * deltaRatio;
     currentScaleY += velScaleY * deltaRatio;
 
@@ -172,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const dragSquish = Math.min(dist * 0.0001, 0.03);
       dX *= 1 - dragSquish;
       dY *= 1 + dragSquish;
-      
+
       // ドラッグ中は掴むカーソル
       document.body.style.cursor = "grabbing";
     } else if (Matter.Query.point([chicken], mouse.position).length > 0) {
