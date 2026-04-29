@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const {
     Engine,
     Render,
-    Runner,
     World,
     Bodies,
     Mouse,
@@ -137,9 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let velScaleY = 0;
 
   Events.on(engine, "afterUpdate", () => {
-    // デルタタイム（フレーム間の経過時間）を取得し、60FPS基準の比率を計算
-    const deltaRatio = (engine.timing.lastDelta || 1000 / 60) / (1000 / 60);
-
     // 速度制限
     const maxSpeed = 30;
     if (chicken.speed > maxSpeed) {
@@ -150,17 +146,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // ぽよぽよ計算にデルタタイムを適用（リフレッシュレートの違いによる挙動変化を防ぐ）
-    const forceX = (baseScale - currentScaleX) * springStrength * deltaRatio;
-    const forceY = (baseScale - currentScaleY) * springStrength * deltaRatio;
+    // ぽよぽよ計算（120Hz固定に合わせてパラメーターを調整）
+    // 60Hzの時と同じ感触にするため、1回あたりの力を調整しています
+    const forceX = (baseScale - currentScaleX) * (springStrength * 0.5);
+    const forceY = (baseScale - currentScaleY) * (springStrength * 0.5);
 
-    // 減衰もデルタタイムの影響を受けるため補正
-    const currentDamping = Math.pow(damping, deltaRatio);
-    velScaleX = (velScaleX + forceX) * currentDamping;
-    velScaleY = (velScaleY + forceY) * currentDamping;
+    velScaleX = (velScaleX + forceX) * Math.pow(damping, 0.5);
+    velScaleY = (velScaleY + forceY) * Math.pow(damping, 0.5);
 
-    currentScaleX += velScaleX * deltaRatio;
-    currentScaleY += velScaleY * deltaRatio;
+    currentScaleX += velScaleX * 0.5;
+    currentScaleY += velScaleY * 0.5;
 
     let dX = currentScaleX;
     let dY = currentScaleY;
@@ -282,8 +277,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 150); // 150ms 待ってから1回だけ再計算
   });
 
-  // 物理演算のランナー
-  const runner = Runner.create();
-  Runner.run(runner, engine);
+  // 物理演算のループ処理 (120Hz固定タイムステップ + アキュムレーター)
+  // 60Hzモニターでも144Hzモニターでも、1秒間に120回の物理演算を行うことで滑らかさと正確さを両立します。
+  let lastTime = 0;
+  const timestep = 1000 / 120; // 120FPS固定
+  let accumulator = 0;
+
+  function run(time) {
+    if (!lastTime) {
+      lastTime = time;
+      requestAnimationFrame(run);
+      return;
+    }
+
+    let deltaTime = time - lastTime;
+    lastTime = time;
+
+    if (deltaTime > 100) deltaTime = timestep;
+
+    accumulator += deltaTime;
+
+    // 120Hzの間隔で演算を進める
+    let updates = 0;
+    while (accumulator >= timestep) {
+      Engine.update(engine, timestep);
+      accumulator -= timestep;
+      updates++;
+      if (updates >= 6) { // 120Hzなので最大6回（1/20秒分）まで許容
+        accumulator = 0;
+        break;
+      }
+    }
+
+    requestAnimationFrame(run);
+  }
+
+  requestAnimationFrame(run);
+
+  // レンダラーを開始
   Render.run(render);
 });
